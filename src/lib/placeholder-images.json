@@ -1,0 +1,22 @@
+{
+  "placeholderImages": [
+    {
+      "id": "map-placeholder",
+      "description": "A placeholder image of a city map with location pins",
+      "imageUrl": "https://images.unsplash.com/photo-1603466183710-70b84997a93f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjaXR5JTIwbWFwfGVufDB8fHx8MTc2MjI3MTg5NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city map"
+    },
+    {
+      "id": "hero-image",
+      "description": "A close-up shot of a blood donation bag with a blurred hospital background, conveying a sense of urgency and hope.",
+      "imageUrl": "https://images.unsplash.com/photo-1683791895200-201c0c40310f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxibG9vZCUyMGRvbmF0aW9ufGVufDB8fHx8MTc2MjQwMDMyOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "blood donation"
+    },
+    {
+      "id": "staff-operations-image",
+      "description": "A professional-looking photo of a medical staff member in a lab coat, working with equipment in a clean, modern blood bank facility.",
+      "imageUrl": "https://images.unsplash.com/photo-1582560475093-ba66accbc424?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtZWRpY2FsJTIwbGFifGVufDB8fHx8MTc2MjUxNjk5NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medical lab"
+    }
+  ]
+}

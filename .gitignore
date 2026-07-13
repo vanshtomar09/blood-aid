@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# Genkit
+.genkit/
+traces/
+traces_idx/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
