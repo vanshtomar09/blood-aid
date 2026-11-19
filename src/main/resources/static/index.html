@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="BloodAid connects donors, recipients and blood banks.">
+  <title>BloodAid</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23d6284a' d='M12 2C12 2 5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13z'/%3E%3C/svg%3E">
+  <script>
+    // Apply the saved theme before first paint to avoid a flash.
+    try {
+      var t = localStorage.getItem('ba-theme');
+      if (t === 'dark' || t === 'light') { document.documentElement.setAttribute('data-theme', t); }
+    } catch (e) { /* storage unavailable: follow the system theme */ }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#view">Skip to content</a>
+
+  <header class="topbar">
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu" aria-controls="sidebar" aria-expanded="false"></button>
+    <a class="brand" href="#/" aria-label="BloodAid home"><span class="brand-mark" id="brandMark"></span><span>BloodAid</span></a>
+    <form class="topsearch" id="topSearch" role="search">
+      <span class="topsearch-icon" id="searchIcon"></span>
+      <input type="search" id="topSearchInput" name="q" placeholder="Search banks, cities or blood type" aria-label="Search blood banks, cities or blood type" autocomplete="off">
+    </form>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle dark mode"></button>
+      <div id="userSlot"></div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <div class="scrim" id="scrim" hidden></div>
+    <nav class="sidebar" id="sidebar" aria-label="Main"></nav>
+    <main id="view" class="view" tabindex="-1" aria-live="polite"></main>
+  </div>
+
+  <button class="chat-fab" id="chatFab" aria-label="Open medical assistant"></button>
+  <section class="chat-panel" id="chatPanel" aria-label="Medical assistant" hidden></section>
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script src="/js/app.js"></script>
+  <script src="/js/views-public.js"></script>
+  <script src="/js/views-auth.js"></script>
+  <script src="/js/views-staff.js"></script>
+  <script src="/js/chat.js"></script>
+  <script>BA.start();</script>
+</body>
+</html>
