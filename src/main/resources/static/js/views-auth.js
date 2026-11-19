@@ -27,6 +27,77 @@
     location.hash = dest;
   }
 
+
+  // ------------------------------------------------- email verification step
+  // Shared by donor, recipient and staff sign-up: a card to enter the emailed code, with a resend timer.
+  function verifyCard() {
+    return '<section class="card" id="step2" hidden>' + ui.pageHead('Verify your email', 'Enter the 6-digit code we sent you') +
+      '<form class="form" id="verifyForm" novalidate><div class="form-note" id="codeNote"></div><div class="form-error" hidden></div>' +
+      ui.field('Verification code', 'code', ui.input('code', 'text', 'required inputmode="numeric" maxlength="6" pattern="\\d{6}" autocomplete="one-time-code"')) +
+      '<button class="btn primary block" type="submit">Verify and create account</button></form>' +
+      '<div class="row" style="margin-top:14px;justify-content:space-between">' +
+      '<button class="btn sm" type="button" id="resendBtn" disabled>Resend code</button>' +
+      '<a href="#" id="changeEmail">Use a different email</a></div></section>';
+  }
+
+  /** Wires the verify card inside `el`. Returns {show(email, res)} to switch from the details form to the code step. */
+  function wireVerify(el, step1Id) {
+    var email = null;
+    var timer = null;
+    var resendBtn = $('#resendBtn', el);
+    var note = $('#codeNote', el);
+
+    function showNote(res) {
+      note.textContent = res.message + (res.demoCode ? ' Code: ' + res.demoCode : '');
+    }
+    function countdown(seconds) {
+      clearInterval(timer);
+      var left = seconds;
+      function tick() {
+        if (!el.isConnected) { clearInterval(timer); return; }
+        resendBtn.disabled = left > 0;
+        resendBtn.textContent = left > 0 ? 'Resend code in ' + left + 's' : 'Resend code';
+        if (left <= 0) { clearInterval(timer); }
+        left--;
+      }
+      tick();
+      timer = setInterval(tick, 1000);
+    }
+
+    ui.bindForm($('#verifyForm', el), function (data) {
+      return BA.api('POST', '/api/auth/verify', { email: email, code: data.code }).then(finishLogin);
+    });
+    resendBtn.addEventListener('click', function () {
+      resendBtn.disabled = true;
+      BA.api('POST', '/api/auth/resend', { email: email }).then(function (res) {
+        showNote(res);
+        countdown(res.resendAfterSeconds || 30);
+        BA.toast('A new code was sent.');
+      }, function (err) {
+        BA.toast((err && err.message) || 'Could not resend the code.', true);
+        countdown(10);
+      });
+    });
+    $('#changeEmail', el).addEventListener('click', function (e) {
+      e.preventDefault();
+      clearInterval(timer);
+      $('#step2', el).hidden = true;
+      $('#' + step1Id, el).hidden = false;
+    });
+
+    return {
+      show: function (addr, res) {
+        email = addr;
+        $('#' + step1Id, el).hidden = true;
+        $('#step2', el).hidden = false;
+        $('#f-code', el).value = '';
+        showNote(res);
+        countdown(res.resendAfterSeconds || 30);
+        $('#f-code', el).focus();
+      }
+    };
+  }
+
   // ------------------------------------------------------------------ login
   BA.addRoute('/login', function () {
     if (BA.state.user) { location.hash = BA.homeFor(BA.role()); return ''; }
@@ -82,7 +153,7 @@
     var isDonor = role === 'DONOR';
     return function () {
       if (BA.state.user) { location.hash = BA.homeFor(BA.role()); return ''; }
-      var html = '<div class="narrow"><p><a href="#/register">&larr; Back</a></p><section class="card">' +
+      var html = '<div class="narrow"><p><a href="#/register">&larr; Back</a></p><section class="card" id="step1">' +
         ui.pageHead(isDonor ? 'Donor registration' : 'Recipient registration', isDonor ? 'Thank you for helping save lives.' : 'Create an account to request blood.') +
         '<form class="form" id="regForm" novalidate><div class="form-error" hidden></div>' +
         ui.field('Full name', 'fullName', ui.input('fullName', 'text', 'required autocomplete="name" maxlength="120"')) +
@@ -91,16 +162,17 @@
         '<div class="form-grid">' +
         ui.field(isDonor ? 'Blood type' : 'Blood type (optional)', 'bloodType', ui.select('bloodType', bloodOptions(isDonor ? 'Select...' : 'Not sure'), '', isDonor ? 'required' : '')) +
         ui.field('Phone', 'phone', ui.input('phone', 'tel', 'autocomplete="tel" maxlength="40"')) + '</div>' +
-        '<button class="btn primary block" type="submit">Create account</button></form></section></div>';
+        '<button class="btn primary block" type="submit">Send verification code</button></form></section>' + verifyCard() + '</div>';
 
       return {
         html: html,
         after: function (el) {
+          var verifyStep = wireVerify(el, 'step1');
           ui.bindForm($('#regForm', el), function (data) {
             var body = { fullName: data.fullName, email: data.email, password: data.password, role: role };
             if (data.bloodType) { body.bloodType = data.bloodType; }
             if (data.phone) { body.phone = data.phone; }
-            return BA.api('POST', '/api/auth/register', body).then(finishLogin);
+            return BA.api('POST', '/api/auth/register', body).then(function (res) { verifyStep.show(data.email, res); });
           });
         }
       };
@@ -128,31 +200,19 @@
         ui.field('Email', 'email', ui.input('email', 'email', 'required autocomplete="email" inputmode="email"')) + '</div>' +
         ui.field('Password', 'password', ui.input('password', 'password', 'required minlength="8" autocomplete="new-password"'), 'At least 8 characters.') +
         '<button class="btn primary block" type="submit">Send verification code</button></form></section>' +
-        '<section class="card" id="step2" hidden>' + ui.pageHead('Verify your account', 'Step 2 of 2: enter the 6-digit code') +
-        '<form class="form" id="verifyForm" novalidate><div class="form-note" id="codeNote"></div><div class="form-error" hidden></div>' +
-        ui.field('Verification code', 'code', ui.input('code', 'text', 'required inputmode="numeric" maxlength="6" pattern="\\d{6}" autocomplete="one-time-code"')) +
-        '<button class="btn primary block" type="submit">Verify and create account</button></form></section></div>';
+        verifyCard() + '</div>';
 
       return {
         html: html,
         after: function (el) {
-          var pendingEmail = null;
+          var verifyStep = wireVerify(el, 'step1');
           ui.bindForm($('#staffForm', el), function (data) {
+            if (!data.bankId) { throw new Error('Please choose your blood bank.'); }
             var body = {
               fullName: data.fullName, employeeId: data.employeeId, bankId: Number(data.bankId),
               phone: data.phone, email: data.email, password: data.password
             };
-            if (!data.bankId) { throw new Error('Please choose your blood bank.'); }
-            return BA.api('POST', '/api/auth/staff/code', body).then(function (res) {
-              pendingEmail = data.email;
-              $('#step1', el).hidden = true;
-              $('#step2', el).hidden = false;
-              $('#codeNote', el).textContent = res.message + (res.demoCode ? ' Code: ' + res.demoCode : '');
-              $('#f-code', el).focus();
-            });
-          });
-          ui.bindForm($('#verifyForm', el), function (data) {
-            return BA.api('POST', '/api/auth/staff/verify', { email: pendingEmail, code: data.code }).then(finishLogin);
+            return BA.api('POST', '/api/auth/staff/code', body).then(function (res) { verifyStep.show(data.email, res); });
           });
         }
       };

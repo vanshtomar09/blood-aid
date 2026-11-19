@@ -63,7 +63,12 @@ configurable:
 | `GEMINI_API_KEY`           | empty                                       | Enables the Gemini chatbot and forecast. Empty means built-in fallbacks. |
 | `GEMINI_MODEL`             | `gemini-2.5-flash`                          | Gemini model name                                                        |
 | `APP_SEED_ENABLED`         | `true`                                      | Create the four demo accounts on startup. **Set `false` outside demos.** |
-| `APP_DEMO_OTP`             | `true`                                      | Show the staff verification code in the UI (there is no SMS provider)    |
+| `MAIL_HOST`                | empty                                       | SMTP server. Set it to email verification codes (e.g. `smtp.gmail.com`)   |
+| `MAIL_PORT`                | `587`                                       | SMTP port (587 STARTTLS, 465 SSL)                                        |
+| `MAIL_USERNAME`            | empty                                       | SMTP login (for Gmail, your address)                                     |
+| `MAIL_PASSWORD`            | empty                                       | SMTP password (for Gmail, an **app password**)                           |
+| `MAIL_FROM`                | the username                                | Sender address                                                           |
+| `APP_DEMO_OTP`             | `true`                                      | Only used when `MAIL_HOST` is empty: show the code on screen instead of emailing it |
 | `PORT`                     | `8080`                                      | HTTP port                                                                |
 
 macOS / Linux:
@@ -91,6 +96,24 @@ Open **http://localhost:8080**.
 
 To run a packaged jar instead: `mvn package` then `java -jar target/bloodaid-1.0.0.jar`.
 
+### Email verification (OTP)
+
+Every sign-up (donor, recipient, staff) is a two-step flow: details, then a 6-digit code sent by email. The account is
+only created once the code is entered correctly. Codes expire after 10 minutes, allow 5 wrong tries, and can be re-sent
+every 30 seconds. Codes and passwords are stored hashed (BCrypt), and unverified sign-ups live in the
+`pending_registrations` table, not in `users`.
+
+- **Real email:** set `MAIL_HOST`, `MAIL_USERNAME` and `MAIL_PASSWORD`. With Gmail: turn on 2-Step Verification, create an
+  app password at https://myaccount.google.com/apppasswords, then
+  ```bash
+  export MAIL_HOST=smtp.gmail.com
+  export MAIL_USERNAME="you@gmail.com"
+  export MAIL_PASSWORD="your-16-char-app-password"   # spaces are ignored
+  ```
+  The code is then only emailed, never shown in the UI.
+- **No email set up (default):** with `APP_DEMO_OTP=true` the code is shown on the sign-up page and written to the server
+  log, so you can still try the flow. With `APP_DEMO_OTP=false` and no `MAIL_HOST`, sign-up is refused.
+
 ## 5. Demo accounts
 
 Created on startup while `APP_SEED_ENABLED=true`. Password for all of them: `Demo@12345`
@@ -104,8 +127,7 @@ Created on startup while `APP_SEED_ENABLED=true`. Password for all of them: `Dem
 
 The login screen has one-tap buttons for these while demo accounts are enabled.
 
-Staff self-registration is two steps (details, then a 6-digit code). With `APP_DEMO_OTP=true` the code is shown on
-screen and also written to the server log. Pending registrations are kept in memory, so a restart discards them.
+Demo accounts are created directly and skip email verification.
 
 ## 6. Screens and features
 
@@ -134,10 +156,11 @@ All JSON. Send `Authorization: Bearer <token>` where a role is listed. Errors lo
 
 | Method & path                             | Access        | Purpose                                              |
 |-------------------------------------------|---------------|------------------------------------------------------|
-| `POST /api/auth/register`                 | public        | Donor or recipient sign-up, returns `{token, user}`  |
+| `POST /api/auth/register`                 | public        | Donor or recipient sign-up step 1: emails a code     |
 | `POST /api/auth/login`                    | public        | Returns `{token, user}`                              |
-| `POST /api/auth/staff/code`               | public        | Staff step 1: validate details, issue a code         |
-| `POST /api/auth/staff/verify`             | public        | Staff step 2: verify code, create account            |
+| `POST /api/auth/staff/code`               | public        | Staff sign-up step 1: emails a code                  |
+| `POST /api/auth/resend`                   | public        | Send a new code (30 s cooldown)                      |
+| `POST /api/auth/verify`                   | public        | Step 2 for every role: check code, create account, returns `{token, user}` |
 | `GET  /api/me`                            | signed in     | Current user                                         |
 | `GET  /api/banks?lat&lng&bloodType&q`     | public        | Banks with stock, nearest first when `lat`/`lng` given |
 | `GET  /api/banks/{id}`                    | public        | One bank                                             |
@@ -185,6 +208,7 @@ src/main/java/com/bloodaid/
 src/main/resources/
   db/migration/V1__schema.sql        tables and constraints
   db/migration/V2__seed_demo_data.sql  12 blood banks, stock, 4 requests, 2 camps
+  db/migration/V3__pending_registrations.sql  sign-ups waiting for their email code
   static/                            index.html, css/app.css, js/*.js
 src/test/java/                       unit tests
 ```
@@ -192,7 +216,7 @@ src/test/java/                       unit tests
 ## 10. Tests
 
 `mvn verify` runs plain JUnit/Mockito unit tests (no database, no network, no Docker): JWT creation, parsing, expiry and
-tampering; the JWT request filter; bank search, sorting and availability rules; the staff verification flow; haversine
+tampering; the JWT request filter; bank search, sorting and availability rules; the email verification flow (codes, expiry, attempts, resend, account creation); haversine
 distance; chatbot and forecast fallbacks; Gemini conversation building.
 
 These do **not** start the Spring context or touch PostgreSQL. There are no integration tests yet, so the end-to-end check
@@ -205,9 +229,9 @@ is to start the app (sections 2 to 4) and click through it.
 - The JWT is kept in the browser's `localStorage`, so any XSS bug would expose it. All dynamic text in the UI is escaped,
   but if you deploy this for real, consider an HttpOnly-cookie session and a Content-Security-Policy.
 - There is no rate limiting or account lockout on login.
-- Change `JWT_SECRET`, set `APP_SEED_ENABLED=false` and `APP_DEMO_OTP=false` before exposing this to anyone.
-  Note that with `APP_DEMO_OTP=false` there is **no** way to deliver the staff code yet; wire up an SMS/email provider
-  in `StaffVerificationService` first, otherwise staff cannot self-register.
+- Change `JWT_SECRET`, set `APP_SEED_ENABLED=false` and `APP_DEMO_OTP=false` before exposing this to anyone, and configure `MAIL_*` so
+  verification codes are actually emailed (with `APP_DEMO_OTP=false` and no mail server, sign-up is refused).
+- Keep `MAIL_PASSWORD` and `GEMINI_API_KEY` in environment variables or your host's secret settings, never in the code.
 
 ## 12. Differences from the original Next.js app
 
@@ -219,4 +243,4 @@ is to start the app (sections 2 to 4) and click through it.
   because the original's fixed 2024 dates are in the past.
 - The Help page keeps the original five FAQs and the contact details (104 health helpline, support@bloodaid.io) word for word, and adds three entries about this version's features.
 - The original chatbot had a placeholder "find hospitals" tool; here the assistant points users to the Map page instead.
-- Staff verification is simulated (see section 5). The original only showed a "Verification successful" alert and checked nothing, so this version is stricter: it issues a code, expires it after 10 minutes and allows 5 attempts.
+- The original only showed a "Verification successful" alert for staff and checked nothing. Here every sign-up (donor, recipient and staff) is verified by an emailed 6-digit code that expires after 10 minutes, with attempt and resend limits.
