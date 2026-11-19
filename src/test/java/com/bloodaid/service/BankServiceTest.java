@@ -37,9 +37,9 @@ class BankServiceTest {
         BloodBankRepository banks = mock(BloodBankRepository.class);
         InventoryItemRepository inventory = mock(InventoryItemRepository.class);
 
-        when(banks.findAll()).thenReturn(List.of(
-                bank(1, "Far Bank", "Noida", 9.0),
-                bank(2, "Near Bank", "Delhi", 2.0)));
+        BloodBank far = bank(1, "Far Bank", "Noida", 9.0);
+        BloodBank near = bank(2, "Near Bank", "Delhi", 2.0);
+        when(banks.findAll()).thenReturn(List.of(far, near));
         when(inventory.findByBankIdIn(anyCollection())).thenReturn(List.of(
                 new InventoryItem(1L, "AB-", 4),
                 new InventoryItem(1L, "O+", 30),

@@ -46,12 +46,17 @@ public final class Dtos {
             @NotBlank @Size(min = 8, max = 72) String password) {
     }
 
-    public record StaffCodeResponse(String message, int expiresInSeconds, String demoCode) {
+    /** Returned after a verification code was issued. demoCode is only set in demo mode (no email configured). */
+    public record CodeResponse(String message, String maskedEmail, int expiresInSeconds,
+                               int resendAfterSeconds, String demoCode) {
     }
 
-    public record StaffVerifyRequest(
+    public record VerifyRequest(
             @NotBlank @Email String email,
             @NotBlank @Pattern(regexp = "^\\d{6}$", message = "Code must be 6 digits") String code) {
+    }
+
+    public record ResendRequest(@NotBlank @Email String email) {
     }
 
     public record UserDto(

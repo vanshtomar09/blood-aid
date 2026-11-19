@@ -77,10 +77,12 @@
 
       var user = BA.state.user;
       var first = user ? user.fullName.split(' ')[0] : null;
-      var hero = '<section class="hero"><h1>' + (first ? 'Welcome back, ' + esc(first) : 'Every drop counts.') + '</h1>' +
+      var hero = '<section class="hero"><span class="hero-kicker">' + (first ? 'Welcome back, ' + esc(first) : 'Blood donation network') + '</span>' +
+        '<h1>' + (first ? 'Every drop<br>counts.' : 'Every drop<br>counts.') + '</h1>' +
         '<p>' + (first ? 'See what is in stock near you and where help is needed most.' : 'Find blood banks, check live stock, request blood, or register as a donor.') + '</p>' +
         '<div class="row"><a class="btn primary" href="#/request">Request blood</a>' +
-        (user ? '<a class="btn ghost" href="#/search">Find blood</a>' : '<a class="btn ghost" href="#/register">Become a donor</a>') + '</div></section>';
+        (user ? '<a class="btn ghost" href="#/search">Find blood</a>' : '<a class="btn ghost" href="#/register">Become a donor</a>') + '</div>' +
+        '<div class="hero-pop" hidden></div></section>';
 
       var tiles = '<div class="grid cols-4">' +
         ui.stat(stats.totalUnits.toLocaleString(), 'Units in stock') +
@@ -100,8 +102,11 @@
             '</div><div class="muted small">' + esc(c.location || '') + '</div></div><span class="badge info nowrap">' + esc(ui.date(c.date)) + '</span></li>';
         }).join('') + '</ul>' : ui.empty('No camps scheduled.')) + '</section>';
 
-      return hero + tiles + '<div class="grid cols-2" style="margin-top:16px">' + stock + reqList + '</div>' +
-        '<div style="margin-top:16px">' + campList + '</div>';
+      return {
+        html: hero + tiles + '<div class="grid cols-2" style="margin-top:16px">' + stock + reqList + '</div>' +
+          '<div style="margin-top:16px">' + campList + '</div>',
+        after: function (el) { if (BA.fx) { BA.fx.mountHero(el.querySelector('.hero')); } }
+      };
     });
   }, { title: 'Home' });
 

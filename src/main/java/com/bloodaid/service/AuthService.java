@@ -1,6 +1,5 @@
 package com.bloodaid.service;
 
-import com.bloodaid.domain.Role;
 import com.bloodaid.domain.User;
 import com.bloodaid.dto.Dtos;
 import com.bloodaid.repository.UserRepository;
@@ -25,30 +24,6 @@ public class AuthService {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-    }
-
-    @Transactional
-    public Dtos.AuthResponse register(Dtos.RegisterRequest request) {
-        if (request.role() != Role.DONOR && request.role() != Role.RECIPIENT) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Only donor or recipient accounts can be created here.");
-        }
-        if (request.role() == Role.DONOR && (request.bloodType() == null || request.bloodType().isBlank())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Blood type is required for donors.");
-        }
-        String email = UserService.normalizeEmail(request.email());
-        if (users.existsByEmail(email)) {
-            throw new ApiException(HttpStatus.CONFLICT, "An account with this email already exists.");
-        }
-
-        User user = new User();
-        user.setFullName(request.fullName().trim());
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setRole(request.role());
-        user.setBloodType(request.bloodType() == null || request.bloodType().isBlank() ? null : request.bloodType());
-        user.setPhone(request.phone() == null || request.phone().isBlank() ? null : request.phone().trim());
-        users.save(user);
-        return issueToken(user);
     }
 
     @Transactional(readOnly = true)

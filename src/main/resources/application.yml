@@ -31,9 +31,17 @@ app:
   seed:
     # Creates demo accounts (admin/staff/donor/recipient) on startup if they do not exist.
     enabled: ${APP_SEED_ENABLED:true}
-  staff:
-    # When true the staff verification code is also returned in the API response (demo only).
-    demo-otp: ${APP_DEMO_OTP:true}
+  otp:
+    # Only used when no mail host is configured: the code is then returned in the API response so the demo
+    # can be completed. With MAIL_HOST set, codes are emailed and never returned.
+    demo: ${APP_DEMO_OTP:true}
+  mail:
+    # Leave MAIL_HOST empty to run without email. Gmail: smtp.gmail.com, 587, an app password.
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:}
 
 gemini:
   # Leave empty to run without AI: the chatbot and forecast use built-in fallbacks.

@@ -31,7 +31,7 @@ public class PublicController {
     public PublicController(StatsService stats, RequestService requests, BankService banks,
                             DonationCampRepository camps, AiService ai,
                             @Value("${app.seed.enabled:true}") boolean demoAccounts,
-                            @Value("${app.staff.demo-otp:true}") boolean demoOtp) {
+                            @Value("${app.otp.demo:true}") boolean demoOtp) {
         this.stats = stats;
         this.requests = requests;
         this.banks = banks;

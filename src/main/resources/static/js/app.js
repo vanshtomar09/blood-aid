@@ -427,6 +427,7 @@
       var html = typeof result === 'string' ? result : result.html;
       el.innerHTML = html;
       if (result && typeof result === 'object' && result.after) { result.after(el); }
+      if (BA.fx && BA.fx.countUp) { BA.fx.countUp(el); }
     }).catch(function (err) {
       if (id !== renderId) { return; }
       el.innerHTML = ui.errorCard(err && err.message ? err.message : 'Unexpected error');
