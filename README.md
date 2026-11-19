@@ -15,8 +15,8 @@ This is a port of the Next.js app `vanshtomar09/blood-aid` to:
 | Map        | Leaflet 1.9.4 + OpenStreetMap tiles (loaded from a CDN)                     |
 | AI         | Gemini REST API, optional. The app runs fully without a key.                |
 
-> **Verification status.** The code was written without being compiled (Maven could not download packages in
-> the environment it was written in). Run `mvn verify` first; see [Tests](#tests) for what was and was not checked.
+> **Status.** Builds and runs locally against PostgreSQL 16: Flyway migrations apply, Hibernate's schema check passes and the demo
+> accounts work. Run `mvn verify` to run the unit tests.
 
 ---
 
@@ -195,8 +195,8 @@ src/test/java/                       unit tests
 tampering; the JWT request filter; bank search, sorting and availability rules; the staff verification flow; haversine
 distance; chatbot and forecast fallbacks; Gemini conversation building.
 
-These do **not** start the Spring context or touch PostgreSQL, so a full startup against a real database is the final
-check: follow sections 2 to 4 and open the app.
+These do **not** start the Spring context or touch PostgreSQL. There are no integration tests yet, so the end-to-end check
+is to start the app (sections 2 to 4) and click through it.
 
 ## 11. Security notes
 
@@ -211,7 +211,7 @@ check: follow sections 2 to 4 and open the app.
 
 ## 12. Differences from the original Next.js app
 
-- The UI is a redesign (not a pixel copy): new layout, dark mode, mobile drawer. The map still uses Leaflet; pins are now colour-coded by stock level (green, amber, red).
+- The UI is a redesign (not a pixel copy): new layout, dark mode, mobile drawer, a crimson home hero with floating blood cells, and small click effects (turned off when the OS "reduce motion" setting is on). The map still uses Leaflet; pins are now colour-coded by stock level (green, amber, red).
 - Data is real: seeded from the original mock data, stored in PostgreSQL, and editable. Admin and home totals are
   **computed** from the database; the original showed hard-coded numbers (for example 1,245 units).
 - Seed details the original never had are placeholders: request patient names, phone numbers, units and urgency, and bank
