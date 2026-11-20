@@ -2,7 +2,7 @@ spring:
   application:
     name: bloodaid
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/bloodaid}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/bloodaid}
     username: ${DB_USERNAME:bloodaid}
     password: ${DB_PASSWORD:bloodaid}
   jpa:
